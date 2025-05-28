@@ -20,7 +20,7 @@ const App: React.FC = () => {
   const updateQuantity = (index: number, quantity: number) => {
     setImages((prev) => {
       const updated = [...prev];
-      updated[index].quantity = quantity > 0 ? quantity : 1;
+      updated[index].quantity = quantity;
       return updated;
     });
   };
@@ -112,6 +112,7 @@ const App: React.FC = () => {
           backgroundColor: "#121212",
           color: "#f0f0f0",
           minHeight: "100vh",
+          maxWidth: "600px",
         }}
       >
         <h1 style={{ textAlign: "center", fontSize: 24, marginBottom: 20 }}>
@@ -161,10 +162,16 @@ const App: React.FC = () => {
                 <input
                   type="number"
                   min={1}
-                  value={img.quantity}
-                  onChange={(e) =>
-                    updateQuantity(index, parseInt(e.target.value))
-                  }
+                  value={img.quantity === 0 ? "" : img.quantity}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    updateQuantity(index, val === "" ? 0 : parseInt(val));
+                  }}
+                  onBlur={(e) => {
+                    if (!e.target.value || parseInt(e.target.value) < 1) {
+                      updateQuantity(index, 1);
+                    }
+                  }}
                   style={{
                     width: "100%",
                     padding: 6,
