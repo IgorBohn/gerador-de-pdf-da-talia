@@ -1,3 +1,5 @@
+/* Remove spinners padrão do navegador */
+
 /* Remove as setas dos inputs type number em navegadores Webkit (Chrome, Safari, Edge) */
 .no-spinner::-webkit-outer-spin-button,
 .no-spinner::-webkit-inner-spin-button {
@@ -8,4 +10,10 @@
 /* Remove as setas em Firefox */
 .no-spinner[type=number] {
   -moz-appearance: textfield;
+}
+
+/* Estilo base do input */
+.no-spinner {
+  -webkit-appearance: none;
+  appearance: none;
 }

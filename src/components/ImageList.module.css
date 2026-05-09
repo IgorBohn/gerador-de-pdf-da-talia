@@ -1,49 +1,56 @@
+/* Container da lista */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-
+/* Item da lista */
 .imageItem {
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-bottom: 22px;
   background: #23272f;
   border-radius: 12px;
-  box-shadow: 0 2px 8px #0002;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   padding: 14px 18px;
-  transition: box-shadow 0.2s;
+  transition: all 0.2s ease;
   position: relative;
+  cursor: grab;
 }
+
 .imageItem:hover {
-  box-shadow: 0 4px 16px #343a40;
+  box-shadow: 0 4px 16px rgba(52, 58, 64, 0.4);
 }
 
+.imageItem:active {
+  cursor: grabbing;
+}
 
-
+/* Preview da imagem */
 .imagePreview {
   width: 110px;
   height: auto;
   border-radius: 10px;
   border: 2px solid #343a40;
-  box-shadow: 0 2px 8px #181a20;
+  box-shadow: 0 2px 8px rgba(24, 26, 32, 0.5);
   background: #181a20;
+  object-fit: cover;
 }
 
-
-
+/* Label da quantidade */
 .quantityLabel {
   flex: 1;
-  font-size: 1.1rem;
-  color: #f0f0f0;
-  font-weight: 500;
-.quantityLabel {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 18px;
+  font-size: 1.1rem;
+  color: #f0f0f0;
+  font-weight: 500;
 }
-}
 
-
-
+/* Input de quantidade */
 .quantityInput {
   width: 80px;
   padding: 7px 10px;
@@ -53,41 +60,66 @@
   color: #f0f0f0;
   font-size: 1.1rem;
   outline: none;
-  transition: border 0.2s;
-.quantityInput {
-  margin-left: 16px;
   text-align: right;
-}
-}
-.quantityInput:focus {
-  border: 2px solid #f0f0f0;
+  transition: border-color 0.2s;
 }
 
+.quantityInput:focus {
+  border-color: #f0f0f0;
+}
+
+/* Botão remover */
 .removeButton {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: transparent;
+  background: rgba(220, 53, 69, 0.8);
   color: white;
   border: none;
   border-radius: 50%;
   width: 28px;
   height: 28px;
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
   padding: 0;
   font-weight: 300;
 }
 
 .removeButton:hover {
-  opacity: 0.7;
+  background: rgba(220, 53, 69, 1);
+  transform: scale(1.1);
 }
 
 .removeButton:active {
   transform: scale(0.95);
+}
+
+/* Responsividade */
+@media (max-width: 640px) {
+  .imageItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding-top: 40px;
+  }
+
+  .imagePreview {
+    width: 100%;
+    max-width: 200px;
+    align-self: center;
+  }
+
+  .quantityLabel {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .quantityInput {
+    width: 100px;
+  }
 }
