@@ -1,14 +1,24 @@
-import React, { useState } from "react";
+
 import jsPDF from "jspdf";
+import { useState } from "react";
+import ImageUploader from "./components/ImageUploader";
+import ImageList from "./components/ImageList";
+import QuantityInput from "./components/QuantityInput";
+import type { ImageWithQuantity } from "./utils/imageUtils";
+import { readFileAsDataURL, rotateImage } from "./utils/imageUtils";
+import styles from "./styles/App.module.css";
+
 
 const App: React.FC = () => {
-  const [images, setImages] = useState<
-    { file: File; url: string; quantity: number }[]
-  >([]);
+  const [images, setImages] = useState<ImageWithQuantity[]>([]);
+  const [batchQuantity, setBatchQuantity] = useState<number>(1);
+  const [pdfName, setPdfName] = useState<string>("output");
+  // Atualiza a quantidade de todas as imagens
+  const applyBatchQuantity = () => {
+    setImages((prev) => prev.map(img => ({ ...img, quantity: batchQuantity })));
+  };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const files = Array.from(e.target.files);
+  const handleImageUpload = (files: File[]) => {
     const newImages = files.map((file) => ({
       file,
       url: URL.createObjectURL(file),
@@ -25,39 +35,18 @@ const App: React.FC = () => {
     });
   };
 
-  const readFileAsDataURL = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
   const generatePDF = async () => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageHeight = doc.internal.pageSize.height;
     const pageWidth = doc.internal.pageSize.width;
     const margin = 10;
-
-    const rotateImage = (img: HTMLImageElement): string => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.height;
-      canvas.height = img.width;
-      const ctx = canvas.getContext("2d")!;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate((90 * Math.PI) / 180);
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
-      return canvas.toDataURL("image/jpeg", 1.0);
-    };
-
     let halfPageIndex = 0;
 
     for (const img of images) {
       for (let i = 0; i < img.quantity; i++) {
         const imgData = await readFileAsDataURL(img.file);
-        const image = new Image();
+        const image = new window.Image();
         image.src = imgData;
-
         await new Promise((resolve) => {
           image.onload = () => resolve(null);
         });
@@ -68,19 +57,14 @@ const App: React.FC = () => {
 
         if (imgNaturalHeight > imgNaturalWidth) {
           finalImgData = rotateImage(image);
-          [imgNaturalWidth, imgNaturalHeight] = [
-            imgNaturalHeight,
-            imgNaturalWidth,
-          ];
+          [imgNaturalWidth, imgNaturalHeight] = [imgNaturalHeight, imgNaturalWidth];
         }
 
         const maxWidth = pageWidth - 2 * margin;
         const maxHeight = pageHeight / 2 - 2 * margin;
-
         const widthRatio = maxWidth / imgNaturalWidth;
         const heightRatio = maxHeight / imgNaturalHeight;
         const scale = Math.min(widthRatio, heightRatio);
-
         const imgWidth = imgNaturalWidth * scale;
         const imgHeight = imgNaturalHeight * scale;
 
@@ -94,112 +78,90 @@ const App: React.FC = () => {
         const x = margin + (maxWidth - imgWidth) / 2;
 
         doc.addImage(finalImgData, "JPEG", x, y, imgWidth, imgHeight);
-
         halfPageIndex++;
       }
     }
-
-    doc.save("output.pdf");
+    let fileName = pdfName.trim();
+    if (!fileName.toLowerCase().endsWith('.pdf')) {
+      fileName += '.pdf';
+    }
+    doc.save(fileName);
   };
 
   return (
     <div className="app-container">
-      <div
-        style={{
-          margin: "0 auto",
-          padding: "20px",
-          fontFamily: "Arial, sans-serif",
-          backgroundColor: "#121212",
-          color: "#f0f0f0",
-          minHeight: "100vh",
-          maxWidth: "600px",
-        }}
-      >
-        <h1 style={{ textAlign: "center", fontSize: 24, marginBottom: 20 }}>
-          Gerador de PDF da Talia
-        </h1>
-
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleImageUpload}
-          style={{
-            width: "100%",
-            padding: 10,
-            backgroundColor: "#1e1e1e",
-            border: "1px solid #333",
-            color: "#f0f0f0",
-            borderRadius: 6,
-            marginBottom: 20,
-          }}
-        />
-
-        <div>
-          {images.map((img, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 20,
-                flexWrap: "wrap",
-              }}
-            >
-              <img
-                src={img.url}
-                alt={`preview-${index}`}
-                style={{
-                  width: 100,
-                  height: "auto",
-                  borderRadius: 8,
-                  border: "1px solid #444",
-                }}
-              />
-              <label style={{ flex: 1 }}>
-                Quantidade:{" "}
-                <input
-                  type="number"
-                  min={1}
-                  value={img.quantity === 0 ? "" : img.quantity}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    updateQuantity(index, val === "" ? 0 : parseInt(val));
-                  }}
-                  onBlur={(e) => {
-                    if (!e.target.value || parseInt(e.target.value) < 1) {
-                      updateQuantity(index, 1);
-                    }
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: 6,
-                    borderRadius: 6,
-                    border: "1px solid #444",
-                    backgroundColor: "#1e1e1e",
-                    color: "#f0f0f0",
-                  }}
-                />
-              </label>
-            </div>
-          ))}
+      <div className={styles.appContainer}>
+        <h1 className={styles.title}>Gerador de PDF da Talia</h1>
+        <div className={styles.uploader}>
+          <ImageUploader onUpload={handleImageUpload} />
         </div>
-
         {images.length > 0 && (
-          <button
-            onClick={generatePDF}
-            style={{
-              width: "100%",
-              padding: "12px 20px",
-              backgroundColor: "#007bff",
-              border: "none",
-              color: "white",
-              cursor: "pointer",
-              borderRadius: 6,
-              fontSize: 16,
+          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end' }}>
+            <label className="batchQuantityLabel" style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '1.1rem', color: '#f0f0f0', fontWeight: 500 }}>
+              <span>Quantidade em lote:</span>
+              <QuantityInput
+                value={batchQuantity}
+                onChange={setBatchQuantity}
+                className="batchQuantityInput"
+                style={{ width: 80, padding: '7px 10px', borderRadius: 7, border: '1.5px solid #343a40', backgroundColor: '#23272f', color: '#f0f0f0', fontSize: '1.1rem', outline: 'none' }}
+              />
+            </label>
+            <button
+              style={{
+                padding: '7px 18px',
+                borderRadius: 7,
+                border: 'none',
+                background: '#343a40',
+                color: '#f0f0f0',
+                fontSize: '1rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px #0002',
+                transition: 'background 0.2s, transform 0.2s',
+                margin: 0,
+                height: 38
+              }}
+              onClick={applyBatchQuantity}
+              onMouseOver={e => (e.currentTarget.style.background = '#23272f')}
+              onMouseOut={e => (e.currentTarget.style.background = '#343a40')}
+            >
+              Aplicar
+            </button>
+          </div>
+        )}
+        {images.length > 0 && (
+          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'flex-end' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '1.1rem', color: '#f0f0f0', fontWeight: 500 }}>
+              <span>Nome do PDF:</span>
+              <input
+                type="text"
+                value={pdfName}
+                onChange={e => setPdfName(e.target.value)}
+                style={{ width: 220, padding: '7px 10px', borderRadius: 7, border: '1.5px solid #343a40', backgroundColor: '#23272f', color: '#f0f0f0', fontSize: '1.1rem', outline: 'none' }}
+                placeholder="Nome do arquivo.pdf"
+              />
+            </label>
+          </div>
+        )}
+        <div className={styles.imageList}>
+          <ImageList
+            images={images}
+            updateQuantity={updateQuantity}
+            onReorder={(from, to) => {
+              setImages(prev => {
+                const updated = [...prev];
+                const [removed] = updated.splice(from, 1);
+                updated.splice(to, 0, removed);
+                return updated;
+              });
             }}
-          >
+            onRemove={(index) => {
+              setImages(prev => prev.filter((_, i) => i !== index));
+            }}
+          />
+        </div>
+        {images.length > 0 && (
+          <button className={styles.styledButton} onClick={generatePDF}>
             Gerar PDF
           </button>
         )}

@@ -1,0 +1,93 @@
+
+
+.imageItem {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 22px;
+  background: #23272f;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #0002;
+  padding: 14px 18px;
+  transition: box-shadow 0.2s;
+  position: relative;
+}
+.imageItem:hover {
+  box-shadow: 0 4px 16px #343a40;
+}
+
+
+
+.imagePreview {
+  width: 110px;
+  height: auto;
+  border-radius: 10px;
+  border: 2px solid #343a40;
+  box-shadow: 0 2px 8px #181a20;
+  background: #181a20;
+}
+
+
+
+.quantityLabel {
+  flex: 1;
+  font-size: 1.1rem;
+  color: #f0f0f0;
+  font-weight: 500;
+.quantityLabel {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+}
+
+
+
+.quantityInput {
+  width: 80px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1.5px solid #343a40;
+  background-color: #23272f;
+  color: #f0f0f0;
+  font-size: 1.1rem;
+  outline: none;
+  transition: border 0.2s;
+.quantityInput {
+  margin-left: 16px;
+  text-align: right;
+}
+}
+.quantityInput:focus {
+  border: 2px solid #f0f0f0;
+}
+
+.removeButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+  padding: 0;
+  font-weight: 300;
+}
+
+.removeButton:hover {
+  opacity: 0.7;
+}
+
+.removeButton:active {
+  transform: scale(0.95);
+}

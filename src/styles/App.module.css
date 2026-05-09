@@ -1,0 +1,56 @@
+
+
+.appContainer {
+  background: linear-gradient(135deg, #23272f 0%, #181a20 100%);
+  box-shadow: 0 8px 32px 0 rgba(20, 20, 30, 0.37);
+  border-radius: 18px;
+  padding: 32px 24px 24px 24px;
+  margin: 32px auto;
+  max-width: 600px;
+  min-height: 80vh;
+  color: #f0f0f0;
+  position: relative;
+}
+
+
+
+.title {
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: 28px;
+  letter-spacing: 1px;
+  color: #f0f0f0;
+  text-shadow: 0 2px 8px #000a;
+}
+
+
+
+
+.styledButton {
+  width: 100%;
+  padding: 12px 28px;
+  background: #343a40;
+  border: none;
+  color: #f0f0f0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 18px;
+  box-shadow: 0 2px 8px #0002;
+  transition: background 0.2s, transform 0.2s;
+  outline: none;
+}
+.styledButton:hover {
+  background: #23272f;
+  transform: none;
+}
+
+.uploader {
+  margin-bottom: 24px;
+}
+
+.imageList {
+  margin-bottom: 16px;
+}
