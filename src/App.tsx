@@ -13,6 +13,9 @@ const App: React.FC = () => {
   const [images, setImages] = useState<ImageWithQuantity[]>([]);
   const [batchQuantity, setBatchQuantity] = useState<number>(1);
   const [pdfName, setPdfName] = useState<string>("output");
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  
   // Atualiza a quantidade de todas as imagens
   const applyBatchQuantity = () => {
     setImages((prev) => prev.map(img => ({ ...img, quantity: batchQuantity })));
@@ -36,29 +39,54 @@ const App: React.FC = () => {
   };
 
   const generatePDF = async () => {
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const pageHeight = doc.internal.pageSize.height;
-    const pageWidth = doc.internal.pageSize.width;
-    const margin = 10;
-    let halfPageIndex = 0;
+    setIsGenerating(true);
+    setProgress({ current: 0, total: 0 });
 
-    for (const img of images) {
-      for (let i = 0; i < img.quantity; i++) {
-        const imgData = await readFileAsDataURL(img.file);
-        const image = new window.Image();
-        image.src = imgData;
-        await new Promise((resolve) => {
-          image.onload = () => resolve(null);
-        });
+    try {
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageHeight = doc.internal.pageSize.height;
+      const pageWidth = doc.internal.pageSize.width;
+      const margin = 10;
+      let halfPageIndex = 0;
 
-        let finalImgData = imgData;
-        let imgNaturalWidth = image.width;
-        let imgNaturalHeight = image.height;
+      const totalPages = images.reduce((sum, img) => sum + img.quantity, 0);
+      setProgress({ current: 0, total: totalPages });
 
-        if (imgNaturalHeight > imgNaturalWidth) {
-          finalImgData = rotateImage(image);
-          [imgNaturalWidth, imgNaturalHeight] = [imgNaturalHeight, imgNaturalWidth];
+      const imageCache = new Map<File, { imgData: string; image: HTMLImageElement; finalImgData: string; width: number; height: number }>();
+
+      let currentPage = 0;
+
+      for (const img of images) {
+        if (!imageCache.has(img.file)) {
+          const imgData = await readFileAsDataURL(img.file);
+          const image = new window.Image();
+          image.src = imgData;
+          await new Promise((resolve) => {
+            image.onload = () => resolve(null);
+          });
+
+          let finalImgData = imgData;
+          let imgNaturalWidth = image.width;
+          let imgNaturalHeight = image.height;
+
+          if (imgNaturalHeight > imgNaturalWidth) {
+            finalImgData = rotateImage(image);
+            [imgNaturalWidth, imgNaturalHeight] = [imgNaturalHeight, imgNaturalWidth];
+          }
+
+          imageCache.set(img.file, {
+            imgData,
+            image,
+            finalImgData,
+            width: imgNaturalWidth,
+            height: imgNaturalHeight
+          });
         }
+
+        const cached = imageCache.get(img.file)!;
+        const imgNaturalWidth = cached.width;
+        const imgNaturalHeight = cached.height;
+        const finalImgData = cached.finalImgData;
 
         const maxWidth = pageWidth - 2 * margin;
         const maxHeight = pageHeight / 2 - 2 * margin;
@@ -68,24 +96,38 @@ const App: React.FC = () => {
         const imgWidth = imgNaturalWidth * scale;
         const imgHeight = imgNaturalHeight * scale;
 
-        if (halfPageIndex % 2 === 0 && halfPageIndex !== 0) {
-          doc.addPage();
+        for (let i = 0; i < img.quantity; i++) {
+          if (halfPageIndex % 2 === 0 && halfPageIndex !== 0) {
+            doc.addPage();
+          }
+
+          const y =
+            (halfPageIndex % 2 === 0 ? margin : pageHeight / 2 + margin) +
+            (maxHeight - imgHeight) / 2;
+          const x = margin + (maxWidth - imgWidth) / 2;
+
+          doc.addImage(finalImgData, "JPEG", x, y, imgWidth, imgHeight);
+          halfPageIndex++;
+          currentPage++;
+          
+          if (currentPage % 5 === 0 || currentPage === totalPages) {
+            setProgress({ current: currentPage, total: totalPages });
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
         }
-
-        const y =
-          (halfPageIndex % 2 === 0 ? margin : pageHeight / 2 + margin) +
-          (maxHeight - imgHeight) / 2;
-        const x = margin + (maxWidth - imgWidth) / 2;
-
-        doc.addImage(finalImgData, "JPEG", x, y, imgWidth, imgHeight);
-        halfPageIndex++;
       }
+
+      let fileName = pdfName.trim();
+      if (!fileName.toLowerCase().endsWith('.pdf')) {
+        fileName += '.pdf';
+      }
+      doc.save(fileName);
+    } catch (error) {
+      alert('Erro ao gerar o PDF. Verifique o console para mais detalhes.');
+    } finally {
+      setIsGenerating(false);
+      setProgress(null);
     }
-    let fileName = pdfName.trim();
-    if (!fileName.toLowerCase().endsWith('.pdf')) {
-      fileName += '.pdf';
-    }
-    doc.save(fileName);
   };
 
   return (
@@ -161,9 +203,45 @@ const App: React.FC = () => {
           />
         </div>
         {images.length > 0 && (
-          <button className={styles.styledButton} onClick={generatePDF}>
-            Gerar PDF
-          </button>
+          <div style={{ textAlign: 'center' }}>
+            <button 
+              className={styles.styledButton} 
+              onClick={generatePDF}
+              disabled={isGenerating}
+              style={{
+                opacity: isGenerating ? 0.6 : 1,
+                cursor: isGenerating ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isGenerating ? 'Gerando PDF...' : 'Gerar PDF'}
+            </button>
+            {progress && (
+              <div style={{ 
+                marginTop: 16, 
+                fontSize: '1rem', 
+                color: '#f0f0f0',
+                fontWeight: 500
+              }}>
+                Processando: {progress.current} / {progress.total} páginas
+                <div style={{
+                  width: '100%',
+                  maxWidth: 400,
+                  height: 8,
+                  backgroundColor: '#23272f',
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                  margin: '8px auto 0'
+                }}>
+                  <div style={{
+                    height: '100%',
+                    backgroundColor: '#4CAF50',
+                    width: `${(progress.current / progress.total) * 100}%`,
+                    transition: 'width 0.3s ease'
+                  }} />
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
